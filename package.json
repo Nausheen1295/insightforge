@@ -1,0 +1,9 @@
+{
+  "name": "insightforge",
+  "private": true,
+  "type": "module",
+  "description": "InsightForge — data analytics & visualisation in the browser. Static site, no build step.",
+  "scripts": {
+    "test": "node --test \"tests/*.test.mjs\""
+  }
+}

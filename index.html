@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>InsightForge — Data Analytics & Visualisation</title>
+  <meta name="description" content="Drop in a CSV and get automatic profiling, recommended charts and plain-language insights. Runs entirely in your browser." />
+  <meta name="theme-color" content="#07080d" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fbbf24' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M4 20V10M10 20V4M16 20v-7M22 20H2'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/app.css" />
+  <script>
+    try { const t = localStorage.getItem("nexus-theme"); if (t) document.documentElement.dataset.theme = t; } catch {}
+  </script>
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="./">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 20V11M12 20V4M19 20v-7"/></svg></span>
+      InsightForge <small>DATA LAB</small>
+    </a>
+    <span class="bar-spacer"></span>
+    <button class="btn btn-ghost btn-icon" id="themeToggle" type="button" aria-label="Switch theme"></button>
+    <a class="home" href="https://nausheen1295.github.io/portfolio/">NEXUS portfolio ↗</a>
+  </header>
+
+  <main class="wrap">
+    <!-- Landing -->
+    <section id="landing">
+      <div class="hero">
+        <h1>Drop in a dataset.<br /><span class="grad">Get the story.</span></h1>
+        <p class="lede">InsightForge profiles every column, recommends the right charts and explains what stands out, in plain language. Your file is processed in this tab and never uploaded.</p>
+      </div>
+      <label class="drop" id="drop" for="fileInput">
+        <input type="file" id="fileInput" accept=".csv,.tsv,.txt,.json,text/csv,application/json" class="sr-only" />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+        <b>Drop a CSV, TSV or JSON file here</b>
+        <span class="muted small">or click to choose one · up to 50 MB</span>
+      </label>
+      <div class="samples">
+        <p class="small muted">No data handy? Try a sample:</p>
+        <div class="sample-grid">
+          <button class="card sample" type="button" data-sample="penguins">
+            <b>Palmer Penguins</b><span class="small muted">344 penguins · species, island, body measurements</span>
+          </button>
+          <button class="card sample" type="button" data-sample="stock_prices">
+            <b>Stock prices 2007–2016</b><span class="small muted">2,306 trading days · AAPL, MSFT, IBM, SBUX, S&amp;P 500</span>
+          </button>
+          <button class="card sample" type="button" data-sample="tips">
+            <b>Restaurant tips</b><span class="small muted">244 bills · tip, party size, day, time</span>
+          </button>
+        </div>
+      </div>
+      <details class="paste">
+        <summary>Paste data instead</summary>
+        <label class="sr-only" for="pasteInput">Paste CSV data</label>
+        <textarea id="pasteInput" class="input mono" rows="6" placeholder="name,score,team&#10;Asha,82,Red&#10;Ben,74,Blue"></textarea>
+        <button class="btn btn-primary" type="button" id="pasteBtn">Analyse pasted data</button>
+      </details>
+      <p class="note error" id="loadError" role="alert" hidden></p>
+    </section>
+
+    <!-- Results -->
+    <section id="results" hidden>
+      <div class="ds-head">
+        <div>
+          <p class="eyebrow">Dataset</p>
+          <h1 id="dsName">—</h1>
+        </div>
+        <div class="row">
+          <button class="btn" type="button" id="reportBtn">Download report</button>
+          <button class="btn" type="button" id="resetBtn">Load another</button>
+        </div>
+      </div>
+      <div class="stats" id="dsStats"></div>
+
+      <div class="tabs" role="tablist" aria-label="Analysis views">
+        <button role="tab" id="t-insights" aria-controls="p-insights" aria-selected="true">Insights</button>
+        <button role="tab" id="t-charts" aria-controls="p-charts" aria-selected="false" tabindex="-1">Charts</button>
+        <button role="tab" id="t-columns" aria-controls="p-columns" aria-selected="false" tabindex="-1">Columns</button>
+        <button role="tab" id="t-corr" aria-controls="p-corr" aria-selected="false" tabindex="-1">Correlations</button>
+        <button role="tab" id="t-data" aria-controls="p-data" aria-selected="false" tabindex="-1">Data</button>
+      </div>
+
+      <div role="tabpanel" id="p-insights" aria-labelledby="t-insights">
+        <p class="small muted">Generated from the statistics below by a rule-based engine. Every finding shows the numbers behind it.</p>
+        <ol class="insights" id="insightList"></ol>
+      </div>
+
+      <div role="tabpanel" id="p-charts" aria-labelledby="t-charts" hidden>
+        <form class="card builder" id="builder">
+          <h2>Build a chart</h2>
+          <div class="builder-row">
+            <label>Chart<select id="bType"><option value="bar">Bar</option><option value="line">Line</option><option value="scatter">Scatter</option><option value="histogram">Histogram</option></select></label>
+            <label>X axis<select id="bX"></select></label>
+            <label>Y axis<select id="bY"></select></label>
+            <label>Aggregate<select id="bAgg"><option value="count">Count</option><option value="sum">Sum</option><option value="mean" selected>Mean</option><option value="median">Median</option><option value="min">Min</option><option value="max">Max</option></select></label>
+            <label>Colour by<select id="bColor"></select></label>
+            <button class="btn btn-primary" type="submit">Draw</button>
+          </div>
+          <p class="small muted" id="builderHint"></p>
+          <div id="builderOut"></div>
+        </form>
+        <h2 class="sub">Recommended for this dataset</h2>
+        <div class="chart-grid" id="chartGrid"></div>
+      </div>
+
+      <div role="tabpanel" id="p-columns" aria-labelledby="t-columns" hidden>
+        <div class="col-grid" id="colGrid"></div>
+      </div>
+
+      <div role="tabpanel" id="p-corr" aria-labelledby="t-corr" hidden>
+        <p class="small muted">Pearson correlation between numeric columns, from −1 (move in opposite directions) to +1 (move together). Hover a cell for its value.</p>
+        <div id="corr"></div>
+      </div>
+
+      <div role="tabpanel" id="p-data" aria-labelledby="t-data" hidden>
+        <div class="row data-tools">
+          <label class="sr-only" for="dataFilter">Filter rows</label>
+          <input class="input" id="dataFilter" type="search" placeholder="Filter rows…" />
+          <span class="small muted" id="dataCount"></span>
+        </div>
+        <div class="table-wrap" id="dataTable"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    Samples: <a href="https://allisonhorst.github.io/palmerpenguins/">Palmer Penguins</a> (CC0, Gorman, Williams &amp; Fraser 2014) ·
+    <a href="https://github.com/mwaskom/seaborn-data">Tips</a> (Bryant &amp; Smith 1995) ·
+    stock prices from Yahoo Finance via <a href="https://github.com/plotly/datasets">plotly/datasets</a>.
+    <br />Built by <a href="https://nausheen1295.github.io/portfolio/">Nausheen Haleelur Rahman</a> · part of NEXUS.
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
